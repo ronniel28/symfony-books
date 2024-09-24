@@ -33,7 +33,7 @@
         <thead>
             <tr class="text-center">
             <th scope="col">
-                <a href="{{ path('app_book', {'sortBy': 'title', 'direction': direction == 'asc' ? 'desc' : 'asc', 'search': searchTerm, 'page': page}) }}">
+                <a href="{{ path('app_book', {'sortBy': 'title', 'direction': direction == 'asc' ? 'desc' : 'asc', 'search': searchTerm, 'page': page}) }}" style="text-decoration: none; color: black">
                     Title
                     {% if sortBy == 'title' %}
                         {{ direction == 'asc' ? '▲' : '▼' }}
@@ -41,7 +41,7 @@
                 </a>
             </th>
             <th scope="col">
-                <a href="{{ path('app_book', {'sortBy': 'author', 'direction': direction == 'asc' ? 'desc' : 'asc', 'search': searchTerm, 'page': page}) }}">
+                <a href="{{ path('app_book', {'sortBy': 'author', 'direction': direction == 'asc' ? 'desc' : 'asc', 'search': searchTerm, 'page': page}) }}" style="text-decoration: none; color: black">
                     Author
                     {% if sortBy == 'author' %}
                         {{ direction == 'asc' ? '▲' : '▼' }}
@@ -50,7 +50,7 @@
             </th>
             <th scope="col">
 
-            <a href="{{ path('app_book', {'sortBy': 'publishedDate', 'direction': direction == 'asc' ? 'desc' : 'asc', 'search': searchTerm, 'page': page}) }}">
+            <a href="{{ path('app_book', {'sortBy': 'publishedDate', 'direction': direction == 'asc' ? 'desc' : 'asc', 'search': searchTerm, 'page': page}) }}" style="text-decoration: none; color: black">
                     Published Date
                     {% if sortBy == 'publishedDate' %}
                         {{ direction == 'asc' ? '▲' : '▼' }}
