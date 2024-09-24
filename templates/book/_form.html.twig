@@ -1,0 +1,35 @@
+  {{ form_start(form, {'attr': {'novalidate' : 'novalidate', 'class' : 'row mx-0 px-5'}}) }}
+    <div>{{ form_errors(form) }}</div>
+
+    <div class="col-6 px-0 pe-1 mb-3">
+        {{ form_label(form.title, 'Title') }}
+        {{ form_widget(form.title) }}
+        {{ form_errors(form.title) }}
+    </div>
+
+    <div class="col-6 px-0 ps-1 mb-3">
+        {{ form_label(form.author, 'Author') }}
+        {{ form_widget(form.author) }}
+        {{ form_errors(form.author) }}
+    </div>
+
+    <div class="col-6 px-0 pe-1 mb-3">
+        {{ form_label(form.publishedDate, 'Published Date') }}
+        {{ form_widget(form.publishedDate) }}
+        {{ form_errors(form.publishedDate) }}
+    </div>
+
+    <div class="col-6 px-0 ps-1 mb-3">
+        {{ form_label(form.isbn, 'ISBN') }}
+        {{ form_widget(form.isbn) }}
+        {{ form_errors(form.isbn) }}
+    </div>
+
+    <div class="col-12 px-0 mb-3">
+        {{ form_label(form.description, 'Description') }}
+        {{ form_widget(form.description) }}
+        {{ form_errors(form.description) }}
+    </div>
+
+    <button class="btn btn-primary" type="submit">SAVE</button>
+  {{ form_end(form) }}

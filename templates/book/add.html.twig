@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Add book{% endblock %}
+
+{% block body %}
+<div class="p-4">
+    <h1 class="text-center mb-5">Add Book</h1>
+    <div class="px-5">
+        {{ include('book/_form.html.twig') }}
+    </div>
+</div>
+
+{% endblock %}

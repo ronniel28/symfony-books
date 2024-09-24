@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Register{% endblock %}
+
+{% block body %}
+    <div class="p-5">
+        <h1 class="px-5">Register</h1>
+
+        {{ form_errors(registrationForm) }}
+
+        {{ form_start(registrationForm) }}
+            <div  class="px-5">
+                {{ form_label(registrationForm.email, 'Email', {'label_attr': {'class': ''}}) }}
+                {{ form_widget(registrationForm.email, {'attr': {'class': ''}})}}
+                {{ form_errors(registrationForm.email) }}
+            </div>
+            <div class="px-5">
+                {{ form_label(registrationForm.plainPassword, 'Password', {'label_attr': {'class': ''}}) }}
+                {{ form_widget(registrationForm.plainPassword, {'attr': {'class': ''}})}}
+                {{ form_errors(registrationForm.plainPassword) }}
+            </div class="px-5">
+        
+            <div class="flex items-center mt-4 mb-4 px-5">
+                {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': ''}}) }}
+                {{ form_label(registrationForm.agreeTerms, 'Agree to terms', {'label_attr': {'class': ''}}) }}
+            </div>
+            <div class="px-5 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary px-5">Register</button>
+            </div>
+            
+        {{ form_end(registrationForm) }}
+    </div>
+    
+{% endblock %}
