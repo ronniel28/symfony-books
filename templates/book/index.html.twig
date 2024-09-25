@@ -29,7 +29,7 @@
         <div class="d-flex mb-4">
             <div class="col-4">
                 {{ form_start(form,{'attr': {'class': ''}}) }}
-                    {{ form_label(form.csvFile, 'Import CSV') }}
+                    {{ form_label(form.csvFile, 'Import CSV (accepts *.csv only)') }}
                     <div class="d-flex">
                         {{ form_widget(form.csvFile) }}
                         {{ form_errors(form.csvFile) }}
