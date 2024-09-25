@@ -26,6 +26,20 @@
             <a href="{{ path('app_book_export', {'export_all': 1}) }}" class="btn btn-primary me-2">Export All Books</a>
             <a href="{{ path('app_book_export', {'search': searchTerm, 'sortBy': sortBy, 'direction': direction}) }}" class="btn btn-secondary">Export Filtered Results</a>
         </div>
+        <div class="d-flex mb-4">
+            <div class="col-4">
+                {{ form_start(form,{'attr': {'class': ''}}) }}
+                    {{ form_label(form.csvFile, 'Import CSV') }}
+                    <div class="d-flex">
+                        {{ form_widget(form.csvFile) }}
+                        {{ form_errors(form.csvFile) }}
+                        <button class="btn btn-primary">Import</button>
+                    </div>
+
+                {{ form_end(form) }}
+            </div>
+        </div>
+
     {% endif %}
 
     {% if pagination.getTotalItemCount > 0 %}

@@ -16,12 +16,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use App\Form\ImportBooksType;
 
 class BookController extends AbstractController
 {
 
     #[Route('/', name: 'app_book')]
-    public function index(Request $request, BookRepository $books, PaginatorInterface $paginator): Response
+    public function index(Request $request, BookRepository $books, PaginatorInterface $paginator, EntityManagerInterface $entityManager): Response
     {
         // dd($this->getUser());
         $searchTerm = $request->query->get('search');
@@ -36,6 +38,37 @@ class BookController extends AbstractController
             $request->query->getInt('page', 1),
             10
         );
+
+        // importing
+        $form = $this->createForm(ImportBooksType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Get the uploaded file
+            $csvFile = $form->get('csvFile')->getData();
+            if ($csvFile) {
+                try {
+                     // Open the CSV file and process each row
+                     $fileHandle = fopen($csvFile->getPathname(), 'r');
+                    
+                     $header = fgetcsv($fileHandle); // Assumes the first row contains the headers
+                   
+                     while (($row = fgetcsv($fileHandle)) !== false) {
+                         $this->processCsvRow($row, $header, $entityManager);
+                     }
+ 
+                     fclose($fileHandle);
+ 
+                     // Persist all the data to the database
+                     $entityManager->flush();
+ 
+                     $this->addFlash('success', 'Books imported successfully!');
+                     return $this->redirectToRoute('app_book');
+                } catch (FileException $e) {
+                    $this->addFlash('error', 'An error occurred while processing the CSV file.');
+                }
+            }
+        }
    
         $totalPage = ceil($pagination->getTotalItemCount()/$pagination->getItemNumberPerPage());
         // dd($pagination);
@@ -45,7 +78,8 @@ class BookController extends AbstractController
             'searchTerm' => $searchTerm,
             'sortBy' => $sortBy,
             'direction' => $direction,
-            'page' => $page
+            'page' => $page,
+            'form' => $form->createView(),
         ]);
     }
 
@@ -171,6 +205,57 @@ class BookController extends AbstractController
             $response->headers->set('Content-Disposition', 'attachment; filename="books.csv"');
     
             return $response;
+    }
+
+    private function processCsvRow(array $row, array $header, EntityManagerInterface $entityManager)
+    {
+        // Map CSV columns to the Book fields
+        $bookData = array_combine($header, $row);
+
+        // Validate data format (e.g., title, author, ISBN, etc.)
+        if (!$this->validateCsvData($bookData)) {
+         
+            return;  // Skip invalid data
+        }
+
+        // Check if the book already exists based on the ISBN
+        $existingBook = $entityManager->getRepository(Book::class)->findOneBy(['isbn' => $bookData['ISBN']]);
     
+        if ($existingBook) {
+            // Update the existing book with the new data
+            $existingBook->setTitle($bookData['Title']);
+            $existingBook->setAuthor($bookData['Author']);
+            $existingBook->setPublishedDate(new \DateTime($bookData['Published Date']));
+            $existingBook->setDescription($bookData['Description']);
+        } else {
+ 
+            // Create a new book
+            $newBook = new Book();
+            $newBook->setTitle($bookData['Title']);
+            $newBook->setAuthor($bookData['Author']);
+            $newBook->setIsbn($bookData['ISBN']);
+            $newBook->setPublishedDate(new \DateTime($bookData['Published Date']));
+            $newBook->setDescription($bookData['Description']);
+
+            $entityManager->persist($newBook);
+        }
+    }
+
+    private function validateCsvData(array $data): bool
+    {
+      
+        // Ensure all required fields are present and valid
+        if (empty($data['Title']) || empty($data['Author']) || empty($data['ISBN']) || empty($data['Published Date'])) {
+           
+            return false;
+        }
+
+        // You can add more validations (e.g., ISBN format, date format, etc.)
+        if (!preg_match('/^\d{13}$/', $data['ISBN'])) {
+
+            return false;  // Invalid ISBN
+        }
+
+        return true;
     }
 }
