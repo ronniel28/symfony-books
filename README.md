@@ -17,7 +17,7 @@ Before setting up the application, make sure you have the following installed:
 
 - PHP 8.1+
 - Composer
-- Symfony CLI (Optional but recommended)
+- Symfony CLI
 - Docker (for setting up MariaDB using Docker)
 
 ## Installation
