@@ -115,7 +115,6 @@ class BookController extends AbstractController
         $entityManager->remove($book);
         $entityManager->flush();
 
-        // Add flash message (optional)
         $this->addFlash('success', 'Book deleted successfully');
         return $this->redirectToRoute('app_book');
 
