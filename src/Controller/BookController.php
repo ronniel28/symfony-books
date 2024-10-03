@@ -18,6 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\Form\ImportBooksType;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class BookController extends AbstractController
 {
@@ -25,6 +26,16 @@ class BookController extends AbstractController
     #[Route('/', name: 'app_book')]
     public function index(Request $request, BookRepository $books, PaginatorInterface $paginator, EntityManagerInterface $entityManager): Response
     {
+        $input = '7:05:45AM';
+        $timeArray = explode(':', $input);
+
+        if(str_contains($timeArray[2], 'AM')){
+            dd (date("H:i:s", strtotime($input)));
+
+        }else{
+            dd (date("H:i:s", strtotime($input)));
+        }
+        
         // dd($this->getUser());
         $searchTerm = $request->query->get('search');
         $sortBy = $request->query->get('sortBy');
@@ -156,55 +167,87 @@ class BookController extends AbstractController
 
     #[Route('/books/export', name: 'app_book_export')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
-    public function exportBooksToCsv(Request $request, BookRepository $books, PaginatorInterface $paginator): StreamedResponse
+    public function exportBooksToCsv(Request $request, BookRepository $books, PaginatorInterface $paginator)
     {
     
         $searchTerm = $request->query->get('search');
         $sortBy = $request->query->get('sortBy', 'title');
         $direction = $request->query->get('direction', 'asc');
 
-          // Check if the user wants to export filtered results or all books
+        // Check if the user wants to export filtered results or all books
         $exportAll = $request->query->get('export_all', false);
 
-              // If the user opts to export all, fetch all books, otherwise use the current search and sorting
+        // Set a limit of 10 records per CSV file
+        $limit = 10;
+
+        // Create a temporary directory to store CSV files
+        $tempDir = sys_get_temp_dir() . '/books_csv_' . uniqid();
+        mkdir($tempDir);
+
+        // Total number of books (for looping)
+        $totalBooks = $exportAll ? count($books->findAll()) : count($books->searchBooks($searchTerm, $sortBy, $direction)->getQuery()->getResult());
+        $totalPages = ceil($totalBooks / $limit);
+
+        // Loop through each page and create individual CSV files
+
+        for ($page = 1; $page <= $totalPages; $page++) {
             if ($exportAll) {
-                $books = $books->findAll();
+                $queryBuilder = $books->createQueryBuilder('b')->orderBy("b.$sortBy", $direction);
             } else {
                 $queryBuilder = $books->searchBooks($searchTerm, $sortBy, $direction);
-                $pagination = $paginator->paginate(
-                    $queryBuilder, 
-                    1, // Page is irrelevant for export, fetch all filtered results
-                    PHP_INT_MAX // Fetch all items for export
-                );
-                $books = $pagination->getItems(); // Get the filtered list
             }
-            // Generate the CSV response
-            $response = new StreamedResponse(function () use ($books) {
-                $handle = fopen('php://output', 'w+');
-                
-                // Write the CSV column headers
-                fputcsv($handle, ['ID', 'Title', 'Author', 'Published Date', 'ISBN', 'Description']);
-                
-                // Write each book's data to the CSV file
-                foreach ($books as $book) {
-                    fputcsv($handle, [
-                        $book->getId(),
-                        $book->getTitle(),
-                        $book->getAuthor(),
-                        $book->getPublishedDate()->format('Y-m-d'),
-                        $book->getIsbn(),
-                        $book->getDescription()
-                    ]);
-                }
 
-                fclose($handle);
-            });
+            $pagination = $paginator->paginate(
+                $queryBuilder,
+                $page, // Current page
+                $limit // Fetch 10 items per page
+            );
+            
+            $paginatedBooks = $pagination->getItems();
+            
+            // Generate CSV file for the current page
+            $csvFile = $tempDir . '/books_page_' . $page . '.csv';
+            $handle = fopen($csvFile, 'w+');
+            
+            // Write the CSV column headers
+            fputcsv($handle, ['ID', 'Title', 'Author', 'Published Date', 'ISBN', 'Description']);
+            
+            // Write each book's data to the CSV file
+            foreach ($paginatedBooks as $book) {
+                fputcsv($handle, [
+                    $book->getId(),
+                    $book->getTitle(),
+                    $book->getAuthor(),
+                    $book->getPublishedDate()->format('Y-m-d'),
+                    $book->getIsbn(),
+                    $book->getDescription()
+                ]);
+            }
 
-            $response->setStatusCode(200);
-            $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
-            $response->headers->set('Content-Disposition', 'attachment; filename="books.csv"');
-    
-            return $response;
+            fclose($handle);
+        }
+
+        // Create a ZIP file and add all CSVs to it
+        $zipFile = $tempDir . '/books_export.zip';
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFile, \ZipArchive::CREATE) === TRUE) {
+            foreach (glob($tempDir . '/*.csv') as $csvFile) {
+                $zip->addFile($csvFile, basename($csvFile));
+            }
+            $zip->close();
+        }
+
+        // Create a response to download the ZIP file
+        $response = new BinaryFileResponse($zipFile);
+        $response->setStatusCode(200);
+        $response->headers->set('Content-Type', 'application/zip');
+        $response->headers->set('Content-Disposition', 'attachment; filename="books_export.zip"');
+
+        // Cleanup: delete temporary files after sending the response
+        $response->deleteFileAfterSend(true);
+
+        return $response;
+
     }
 
     private function processCsvRow(array $row, array $header, EntityManagerInterface $entityManager)
